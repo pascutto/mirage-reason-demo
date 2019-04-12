@@ -27,3 +27,16 @@ setup.log
 
 # Local OPAM switch
 _opam/
+
+# Mirage files
+src/httpaf_unikernel
+src/key_gen.ml
+src/main.ml
+src/Makefile
+src/static1.ml
+src/static1.mli
+src/build-config
+src/dune
+src/dune-project
+src/.mirage.config
+src/*.opam
