@@ -9,11 +9,14 @@ let data = generic_kv_ro "../site"
 
 let server =
   foreign "Unikernel.Make"
-    (console @-> pclock @-> kv_ro @-> http @-> job)
+    (console @-> pclock @-> kv_ro @-> conduit @-> http @-> job)
+
+let conduit = (conduit_direct stack)
 
 let app =
-  httpaf_server (conduit_direct stack)
+  httpaf_server conduit
 
 let () =
   register "httpaf_unikernel"
-  [ server $ default_console $ default_posix_clock$ data $ app ]
+  ~packages:[package "mirage-websocket"; package "mirage-http"]
+  [ server $ default_console $ default_posix_clock$ data $ conduit $ app ]
