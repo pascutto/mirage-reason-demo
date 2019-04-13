@@ -1,17 +1,24 @@
 open Lwt.Infix;
 open Httpaf;
 
+module HTTP = Mirage_http_cohttp;
+
 module Dispatch = (C: Mirage_types_lwt.CONSOLE, FS : Mirage_types_lwt.KV_RO, CON: Conduit_mirage.S, Http: Httpaf_mirage.Server_intf) => {
 
   let log = (c, fmt) => Printf.ksprintf (C.log(c), fmt);
 
-  module Ws = Websocket.Make(Mirage_http_httpaf)(CON);
-  module HTTP = Mirage_http_httpaf;
-  module Server = Mirage_http_httpaf.Server(CON);
+  module Ws = Websocket.Make(HTTP)(CON);
+  module Server = HTTP.Server(CON);
+
+  let rec manager = (client) => {
+    Ws.Connection.recv (client) >>= (frame) => {
+      let frame = Ws.Frame.create(~content="ok.",());
+      Ws.Connection.send (client, frame) >>= () => manager(client)
+    }
+  }
 
   let ws_server = (client) => {
-    let frame = Ws.Frame.create(~content="bonjour.",());
-    Ws.Connection.send (client, frame)
+    manager(client);
   };
 
   let upgrade_to_websockets = (reqd) => {
@@ -27,9 +34,9 @@ module Dispatch = (C: Mirage_types_lwt.CONSOLE, FS : Mirage_types_lwt.KV_RO, CON
   };
 
   let header_from_string = (body) =>
-    HTTP.HTTP.Headers.of_list ([("Content-Length", body
+    HTTP.HTTP.Headers.of_list ([/*("Content-Length", body
     |> String.length
-    |> string_of_int)])
+    |> string_of_int)*/])
 
   let get_content = (fs, c, path) =>
     FS.get(fs, Mirage_kv.Key.v (path)) >>= (res) => switch res {
@@ -53,7 +60,8 @@ module Dispatch = (C: Mirage_types_lwt.CONSOLE, FS : Mirage_types_lwt.KV_RO, CON
 
   let rec handler = (fs,c,reqd) => {
     let req = Server.get_request (reqd);
-    let path = Uri.to_string (HTTP.Request.uri (req));
+    let path = Uri.path (HTTP.Request.uri (req));
+    log (c, "Request: %s", path) >>= () => {
     let response = switch path {
       | "/hello" => get_content(fs, c, "/hello.html")
       | "/goodbye" => get_content(fs, c, "/goodbye.html")
@@ -61,7 +69,7 @@ module Dispatch = (C: Mirage_types_lwt.CONSOLE, FS : Mirage_types_lwt.KV_RO, CON
       | "/ws" => Lwt.return (upgrade_to_websockets(req))
       | _   => get_content(fs, c, path)
     };
-    response
+    response}
   };
 /*
   let dispatcher = (fs, c, reqd) => {
@@ -94,7 +102,7 @@ module Make = (C : Mirage_types_lwt.CONSOLE, Clock : Mirage_types_lwt.PCLOCK, FS
 
   let log = (c, fmt) => Printf.ksprintf (C.log(c), fmt);
 
-  module Server = Mirage_http_httpaf.Server(CON);
+  module Server = HTTP.Server(CON);
 
   let start = (c, _clock, fs, conduit, _http) =>
     log (c, "started unikernel listen on port 8001") >>= () =>
