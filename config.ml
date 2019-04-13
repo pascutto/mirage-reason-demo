@@ -19,8 +19,8 @@ let app =
 let () =
   register "httpaf_unikernel"
   ~packages:[
-    package "mirage-websocket";
-    package ~ocamlfind:["mirage-http.cohttp"] ~pin:"git+https://github.com/mirage/mirage-http.git#master" "mirage-http";
+    package ~pin:"git+https://github.com/TheLortex/mirage-websocket.git" "mirage-websocket";
+    package ~ocamlfind:["mirage-http.cohttp"] ~pin:"git+https://github.com/mirage/mirage-http.git#wip" "mirage-http";
     package ~pin:"git+https://github.com/anmonteiro/httpaf.git#mirage" "httpaf";
     package ~pin:"git+https://github.com/anmonteiro/httpaf.git#mirage" "httpaf-mirage";
     package ~pin:"git+https://github.com/anmonteiro/httpaf.git#mirage" "httpaf-lwt"]

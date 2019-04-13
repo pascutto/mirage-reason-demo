@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "reason": {"react-jsx" : 2},
   "sources": {
-    "dir" : "re",
+    "dir" : "site_re",
     "subdirs" : true
   },
   "package-specs": {
